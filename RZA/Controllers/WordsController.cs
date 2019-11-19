@@ -56,6 +56,9 @@ namespace RZA.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,content,secret")] Word word)
         {
+            int[] Alien = gereate_public(5, 17);
+            word.secret = Encrypt(Alien, word.content);
+
             if (ModelState.IsValid)
             {
                 _context.Add(word);
@@ -88,6 +91,9 @@ namespace RZA.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,content,secret")] Word word)
         {
+            int[] Alien = gereate_public(5, 17);
+            word.secret = Encrypt(Alien, word.content);
+
             if (id != word.Id)
             {
                 return NotFound();
@@ -148,6 +154,112 @@ namespace RZA.Controllers
         private bool WordExists(int id)
         {
             return _context.Word.Any(e => e.Id == id);
+        }
+
+        private int gcd(int a, int b)
+        {
+            while (a != 0 && b != 0)
+            {
+                if (a > b)
+                    a %= b;
+                else
+                    b %= a;
+            }
+
+            return a == 0 ? b : a;
+        }
+
+        private int multiplicative_inversive(int e, int phi)
+        {
+            int d = 0;
+            int x1 = 0;
+            int x2 = 1;
+            int y1 = 1;
+            int temp_phi = phi;
+
+            while (e > 0)
+            {
+                int temp1 = temp_phi / e;
+                int temp2 = temp_phi - temp1 * e;
+                temp_phi = e;
+                e = temp2;
+
+                int x = x2 - temp1 * x1;
+                int y = d - temp1 * y1;
+
+                x2 = x1;
+                x1 = x;
+                d = y1;
+                y1 = y;
+            }
+
+            if (temp_phi == 1)
+            {
+                return d + phi;
+            }
+
+            return d + phi;
+        }
+
+        private bool is_prime(int num)
+        {
+            if (num <= 1) return false;
+            if (num == 2) return true;
+            if (num % 2 == 0) return false;
+
+            var boundary = (int)Math.Floor(Math.Sqrt(num));
+
+            for (int i = 3; i <= boundary; i += 2)
+                if (num % i == 0)
+                    return false;
+
+            return true;
+        }
+
+        private int[] gereate_public(int p, int q)
+        {
+            Random R = new Random();
+
+            if (!is_prime(p) && is_prime(q))
+            {
+                Console.WriteLine("Los numeros deben ser primos");
+            }
+            else if (p == q)
+            {
+                Console.WriteLine("P y Q no pueden ser iguales");
+            }
+
+            int n = p * q;
+
+            int phi = (p - 1) * (q - 1);
+
+            int e = R.Next(1, phi);
+
+            int g = gcd(e, phi);
+            while (g != 1)
+            {
+                e = R.Next(1, phi);
+                g = gcd(e, phi);
+            }
+
+            int d = multiplicative_inversive(e, phi);
+            int[] pub = { e, n };
+            return pub;
+        }
+
+        private String Encrypt(int[] pk, String Text)
+        {
+            Double a = pk[0];
+            Double b = pk[1];
+            String Encriptada = "";
+            foreach (char c in Text)
+            {
+                Double x = Math.Pow(c, b);
+                Double y = x % b;
+                Encriptada += y.ToString();
+            }
+            return Encriptada;
+
         }
     }
 }
